@@ -1,44 +1,93 @@
+import sys
 from tkinter import HORIZONTAL
 
 import cv2
 import os
 import tkinter
+from tkinter import filedialog
+from tkinter import messagebox as mb
 from PIL import Image, ImageTk
+
 #                   X   Y
-IMAGE_PLACEMENT = [200, 90]
+IMAGE_PLACEMENT = [200, 120]
 SLIDER_RANGE = 600
 WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 1200
-#TODO:
-# -image preview creation in init
-# -refactor XD XD
-# -file explorer
-# -video compatibility (how to solve running video? Maybe run videos in different mode - i.e. conver and run on button - dynamic gui)
-# -add more filters
-# -change to pyqt?
+
+IMAGES_EXTENSIONS = "*.jpg* *.jpeg* *.jpe* *.jif* *.jfif* *.jfi*"
+# TODO:
+# - refactor XD XD XD xd
+# - video compatibility (how to solve running video? Maybe run videos in different mode - i.e. conver and run on button - dynamic gui)
+# - add more filters
+# - change to pyqt?
 class mainWindow():
-    def __init__(self, path):
+    def __init__(self):
+        self.image_path = None
         self.window = tkinter.Tk()
-
         self.window.geometry(str(WINDOW_WIDTH) + "x" + str(WINDOW_HEIGHT))
-        self.image = cv2.imread(path)
-        self.scale_ratio = self.getScaleRatio(shape=self.image.shape)
-        self.image_path = path
-
         self.createGui()
-        self.image_preview = tkinter.Label(image=self.opencvToPIL(image=self.image))
 
+    def openExitDialog(self):
+        if mb.askyesno('No image choosen', 'There is no image/video choosen, do you want to quit?'):
+            sys.exit()
 
     def saveImage(self):
         without_empty_strings = [string for string in self.image_path.split("\\") if string != ""]
         img_name = without_empty_strings[-1]
         base_path = "\\".join(without_empty_strings[:-1])
         base_path = base_path + "\\Canny_" + img_name.split('.')[0]
-          
+
+    def browseFiles(self):
+        previous_path = self.image_path
+        self.image_path = None
+
+        while not self.image_path:
+            self.image_path = filedialog.askopenfilename(initialdir="/",
+                                                         title="Select a File",
+                                                         filetypes=(("Images",
+                                                                     IMAGES_EXTENSIONS),
+                                                                    ("all files",
+                                                                     "*.*")))
+
+            if (self.image_path is None or self.image_path == '') and \
+                    (previous_path is not None and previous_path != ''):
+                self.image_path = previous_path
+                break
+            if self.image_path is False or self.image_path == '':
+                self.openExitDialog()
+
+
+        self.updatePhoto(self.image_path)
+
+
+
+    def updatePhoto(self, image):
+        print(image)
+        if isinstance(image, str) and image != '':
+            self.image = cv2.imread(self.image_path)
+        print(image)
+        self.scale_ratio = self.getScaleRatio(shape=self.image.shape)
+
+        # Resize photo to fit window
+        resized_image = self.resizePhoto(self.image)
+
+        resized_shape = resized_image.shape
+        borders = WINDOW_WIDTH - resized_shape[1]
+        IMAGE_PLACEMENT[0] = borders/2
+        self.image_preview.place(x=IMAGE_PLACEMENT[0], y=IMAGE_PLACEMENT[1])
+
+        # Create image label
+        pil_image = self.opencvToPIL(image=resized_image)
+
+        self.image_preview.image = pil_image
+        self.image_preview.configure(image=pil_image)
+        self.window.update_idletasks()
+
     def createGui(self):
         self.lower_limit = 0
         self.upper_limit = 40
 
+        # Create sliders
         self.lower_slider = tkinter.Scale(self.window, from_=0, to=SLIDER_RANGE,
                                           orient=HORIZONTAL, variable=self.lower_limit, length=1200,
                                           resolution=1, command=lambda value: self.sliderChange(value))
@@ -49,19 +98,17 @@ class mainWindow():
                                           command=lambda value: self.sliderChange(value))
         self.upper_slider.pack()
 
-        # self.button = tkinter.Button(self.window, text="Process photo!",
-        #                         command=lambda: self.preparePhotos())
-        # self.button.pack()
+        # Create browser button
+        self.button = tkinter.Button(self.window, text="Browse files!",
+                                     command=lambda: self.browseFiles())
+        self.button.pack()
 
-        # self.canvas = tkinter.Canvas(self.window, width=300, height=300)
-        # self.canvas.pack()
-        # self.canvas.create_image(20, 20, anchor=tkinter.NW, image=self.image)
+        # Create label image preview
+        self.image_preview = tkinter.Label(self.window)
+        self.image_preview.pack()
 
+        # Start main window
         self.window.mainloop()
-        self.image_preview.image = self.opencvToPIL(image=self.image)
-        self.image_preview.place(x=IMAGE_PLACEMENT[0], y=IMAGE_PLACEMENT[1])
-
-        self.window.update_idletasks()
 
     def sliderChange(self, value):
         if self.upper_slider.get() <= self.lower_slider.get() <= SLIDER_RANGE - 10:
@@ -85,16 +132,21 @@ class mainWindow():
         pil_image = ImageTk.PhotoImage(im)
         return pil_image
 
+    def resizePhoto(self, image):
+        image_shape = image.shape
+        resized_image = cv2.resize(image,
+                                   [int(image_shape[1] * self.scale_ratio), int(image_shape[0] * self.scale_ratio)])
+        return resized_image
+
     def convertPhoto(self):
-        height, width, _ = self.image.shape
+
         canny_image = cv2.Canny(self.image, self.lower_slider.get(), self.upper_slider.get())
 
-        canny_image = cv2.resize(canny_image, [int(width * self.scale_ratio), int(height * self.scale_ratio)])
+        canny_image = self.resizePhoto(canny_image)
         pil_image = self.opencvToPIL(canny_image)
 
-        self.image_preview = tkinter.Label(image=pil_image)
         self.image_preview.image = pil_image
-        self.image_preview.place(x=IMAGE_PLACEMENT[0], y=IMAGE_PLACEMENT[1])
+        self.image_preview.configure(image=pil_image)
         self.window.update_idletasks()
 
     def getScaleRatio(self, shape):
@@ -108,12 +160,10 @@ class mainWindow():
         else:
             return height_scale_ratio
 
-        # cv2.imshow("Canny image", canny_image)
-        # cv2.waitKey(0)
 
 
 if __name__ == '__main__':
     # pathh = r'C:\\Users\\gracj\\OneDrive\\Obrazy\\cot.jpg'
     pathh = r'C:\\Users\\gracj\\OneDrive\\Obrazy\\kurczak.jpg'
-    window = mainWindow(pathh)
+    window = mainWindow()
     # cannyImage(pathh)
