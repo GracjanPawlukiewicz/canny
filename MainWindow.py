@@ -7,7 +7,7 @@ import tkinter
 from tkinter import filedialog
 from tkinter import messagebox as mb
 from PIL import Image, ImageTk
-from ProcessedImage import ProcessedImage
+from TargetImage import TargetImage
 
 #                   X   Y
 IMAGE_PLACEMENT = [200, 120]
@@ -15,16 +15,31 @@ SLIDER_RANGE = 600
 WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 1200
 
-IMAGES_EXTENSIONS = "*.jpg* *.jpeg* *.jpe* *.jif* *.jfif* *.jfi*"
+IMAGES_EXTENSIONS = "*.jpg* *.jpeg* *.jpe* *.jif* *.jfif* *.jfi* *.gif*"
 # TODO:
-# - refactor XD XD XD xd
-# - video compatibility (how to solve running video? Maybe run videos in different mode - i.e. conver and run on button - dynamic gui)
-# - add more filters
-# - change to pyqt?
-class mainWindow():
+#  - refactor XD XD XD xd
+#  - video compatibility (how to solve running video? Maybe run videos in different mode - i.e. convert and run on button - dynamic gui)
+#  - add more filters
+#  - change to pyqt?
+
+def opencvToPIL(image):
+    if len(image.shape) > 2:
+        b, g, r = cv2.split(image)
+        img = cv2.merge((r, g, b))
+        im = Image.fromarray(img)
+    else:
+        im = Image.fromarray(image)
+
+    pil_image = ImageTk.PhotoImage(im)
+    return pil_image
+
+
+class MainWindow:
     def __init__(self):
+        self.lower_limit = 0
+        self.upper_limit = 40
         self.image_path = None
-        self.image = ProcessedImage()
+        self.image = TargetImage()
         self.window = tkinter.Tk()
         self.window.geometry(str(WINDOW_WIDTH) + "x" + str(WINDOW_HEIGHT))
         self.createGui()
@@ -60,8 +75,6 @@ class mainWindow():
 
         self.updatePhoto(self.image_path)
 
-
-
     def updatePhoto(self, image):
         if isinstance(image, str) and image != '':
             self.image(image)
@@ -78,7 +91,7 @@ class mainWindow():
         self.image_preview.place(x=IMAGE_PLACEMENT[0], y=IMAGE_PLACEMENT[1])
 
         # Convert cv2 image to PIL
-        pil_image = self.opencvToPIL(image=resized_image)
+        pil_image = opencvToPIL(image=resized_image)
 
         # Update image label
         self.image_preview.image = pil_image
@@ -86,8 +99,6 @@ class mainWindow():
         self.window.update_idletasks()
 
     def createGui(self):
-        self.lower_limit = 0
-        self.upper_limit = 40
 
         # Create sliders
         self.lower_slider = tkinter.Scale(self.window, from_=0, to=SLIDER_RANGE,
@@ -123,19 +134,8 @@ class mainWindow():
         print(base_path + "\\" + img_name.split('.')[0] + "1." + img_name.split('.')[1])
         cv2.imwrite(base_path + "\\" + img_name.split('.')[0] + "2." + img_name.split('.')[1], ddd)
 
-    def opencvToPIL(self, image):
-        if len(image.shape) > 2:
-            b, g, r = cv2.split(image)
-            img = cv2.merge((r, g, b))
-            im = Image.fromarray(img)
-        else:
-            im = Image.fromarray(image)
-
-        pil_image = ImageTk.PhotoImage(im)
-        return pil_image
-
     def convertPhoto(self):
-        pil_image = self.opencvToPIL(self.image.resize(self.image.canny_filter(self.upper_slider.get(),
+        pil_image = opencvToPIL(self.image.resize(self.image.canny_filter(self.upper_slider.get(),
                                                                                self.lower_slider.get())))
         # Update image label to show converted photo
         self.image_preview.image = pil_image
@@ -155,4 +155,4 @@ class mainWindow():
 
 
 if __name__ == '__main__':
-    window = mainWindow()
+    window = MainWindow()

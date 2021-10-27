@@ -1,14 +1,7 @@
-import sys
-from tkinter import HORIZONTAL
-
 import cv2
-import os
-import tkinter
-from tkinter import filedialog
-from tkinter import messagebox as mb
-from PIL import Image, ImageTk
 
-class ProcessedImage():
+
+class TargetImage:
     def __init__(self):
         self.scale_ratio = None
         self.photo = None
