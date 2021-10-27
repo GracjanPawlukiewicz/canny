@@ -7,6 +7,7 @@ import tkinter
 from tkinter import filedialog
 from tkinter import messagebox as mb
 from PIL import Image, ImageTk
+from ProcessedImage import ProcessedImage
 
 #                   X   Y
 IMAGE_PLACEMENT = [200, 120]
@@ -23,6 +24,7 @@ IMAGES_EXTENSIONS = "*.jpg* *.jpeg* *.jpe* *.jif* *.jfif* *.jfi*"
 class mainWindow():
     def __init__(self):
         self.image_path = None
+        self.image = ProcessedImage()
         self.window = tkinter.Tk()
         self.window.geometry(str(WINDOW_WIDTH) + "x" + str(WINDOW_HEIGHT))
         self.createGui()
@@ -53,32 +55,32 @@ class mainWindow():
                     (previous_path is not None and previous_path != ''):
                 self.image_path = previous_path
                 break
-            if self.image_path is False or self.image_path == '':
+            elif self.image_path is False or self.image_path == '':
                 self.openExitDialog()
-
 
         self.updatePhoto(self.image_path)
 
 
 
     def updatePhoto(self, image):
-        print(image)
         if isinstance(image, str) and image != '':
-            self.image = cv2.imread(self.image_path)
-        print(image)
-        self.scale_ratio = self.getScaleRatio(shape=self.image.shape)
+            self.image(image)
+        scale_ratio = self.getScaleRatio(shape=self.image.photo.shape)
+        self.image.set_scale(scale_ratio)
 
         # Resize photo to fit window
-        resized_image = self.resizePhoto(self.image)
+        resized_image = self.image.resize()
 
+        # Center photo in window
         resized_shape = resized_image.shape
         borders = WINDOW_WIDTH - resized_shape[1]
         IMAGE_PLACEMENT[0] = borders/2
         self.image_preview.place(x=IMAGE_PLACEMENT[0], y=IMAGE_PLACEMENT[1])
 
-        # Create image label
+        # Convert cv2 image to PIL
         pil_image = self.opencvToPIL(image=resized_image)
 
+        # Update image label
         self.image_preview.image = pil_image
         self.image_preview.configure(image=pil_image)
         self.window.update_idletasks()
@@ -132,19 +134,10 @@ class mainWindow():
         pil_image = ImageTk.PhotoImage(im)
         return pil_image
 
-    def resizePhoto(self, image):
-        image_shape = image.shape
-        resized_image = cv2.resize(image,
-                                   [int(image_shape[1] * self.scale_ratio), int(image_shape[0] * self.scale_ratio)])
-        return resized_image
-
     def convertPhoto(self):
-
-        canny_image = cv2.Canny(self.image, self.lower_slider.get(), self.upper_slider.get())
-
-        canny_image = self.resizePhoto(canny_image)
-        pil_image = self.opencvToPIL(canny_image)
-
+        pil_image = self.opencvToPIL(self.image.resize(self.image.canny_filter(self.upper_slider.get(),
+                                                                               self.lower_slider.get())))
+        # Update image label to show converted photo
         self.image_preview.image = pil_image
         self.image_preview.configure(image=pil_image)
         self.window.update_idletasks()
@@ -161,9 +154,5 @@ class mainWindow():
             return height_scale_ratio
 
 
-
 if __name__ == '__main__':
-    # pathh = r'C:\\Users\\gracj\\OneDrive\\Obrazy\\cot.jpg'
-    pathh = r'C:\\Users\\gracj\\OneDrive\\Obrazy\\kurczak.jpg'
     window = mainWindow()
-    # cannyImage(pathh)
