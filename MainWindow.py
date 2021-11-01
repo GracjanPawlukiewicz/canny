@@ -83,7 +83,7 @@ class MainWindow:
             extension = file_name.pop()
 
             final_path = "/".join(base_path[:-1]) + "/" + file_name[0] + "_canny." + extension
-            
+
         if self.image.processed is not None:
             cv2.imwrite(final_path, self.image.processed)
 
