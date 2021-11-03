@@ -7,11 +7,9 @@ import os
 import tkinter
 from tkinter import filedialog
 from tkinter import messagebox as mb
-from PIL import Image, ImageTk
 from TargetImage import TargetImage
+from utils import opencvToPIL, getScaleRatio
 
-#                   X   Y
-IMAGE_PLACEMENT = [200, 120]
 SLIDER_RANGE = 600
 WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 1200
@@ -25,46 +23,14 @@ IMAGES_EXTENSIONS = "*.jpg* *.jpeg* *.jpe* *.jif* *.jfif* *.jfi* *.gif*"
 #  - add more filters
 #  - change to pyqt?
 
-def opencvToPIL(image):
-    """Method that converts photo from opencv array to PIL image instance
-
-        Arguments:
-            image - image that is going to be converted
-
-        :return PIL image
-    """
-    if len(image.shape) > 2:
-        b, g, r = cv2.split(image)
-        img = cv2.merge((r, g, b))
-        im = Image.fromarray(img)
-    else:
-        im = Image.fromarray(image)
-
-    pil_image = ImageTk.PhotoImage(im)
-    return pil_image
-
-
-def getScaleRatio(shape):
-    """ Method calculates image scale to fit into window
-
-        Arguments:
-            shape - image shape in opencv array format [height, width, number of channels]
-    """
-    img_new_height = WINDOW_HEIGHT - IMAGE_PLACEMENT[1]
-    height_scale_ratio = img_new_height / shape[0]
-    img_new_width = WINDOW_WIDTH - (IMAGE_PLACEMENT[0] * 2)
-    width_scale_ratio = img_new_width / shape[1]
-
-    if height_scale_ratio >= width_scale_ratio:
-        return width_scale_ratio
-    else:
-        return height_scale_ratio
-
 
 class MainWindow:
     def __init__(self):
         self.lower_limit = 0
         self.upper_limit = 40
+        #                        X    Y
+        self.image_placement = [200, 160]
+
         self.image_path = None
         self.image = TargetImage()
         self.window = tkinter.Tk()
@@ -76,22 +42,19 @@ class MainWindow:
         if mb.askyesno('No image choosen', 'There is no image/video choosen, do you want to quit?'):
             sys.exit()
 
-    def saveImage(self):
-        if self.checkImagePath():
-            base_path = self.image_path.split('/')
-            file_name = base_path[-1].split(".")
-            extension = file_name.pop()
+    def openWarningDialog(self, warning):
+        """ Method that calls warning dialog when there is no image processed"""
 
-            final_path = "/".join(base_path[:-1]) + "/" + file_name[0] + "_canny." + extension
-
-        if self.image.processed is not None:
-            cv2.imwrite(final_path, self.image.processed)
+        mb.showwarning('No image processed', 'There is nothing to save!\n' + warning)
 
     def checkImagePath(self):
-        if imghdr.what(self.image_path):
-            return True
-        else:
-            return False
+        try:
+            if imghdr.what(self.image_path):
+                return True
+            else:
+                return False
+        except AttributeError:
+            self.openWarningDialog("No path selected!")
 
     def browseFiles(self):
         """Method that opens file explorer to choose path of photo"""
@@ -113,9 +76,9 @@ class MainWindow:
             elif not self.checkImagePath():
                 self.openExitDialog()
             else:
-                self.updatePhoto(self.image_path)
+                self.updatePreview(self.image_path)
 
-    def updatePhoto(self, update):
+    def updatePreview(self, update):
         """ Method loads photo selected in GUI if it is different than currently loaded photo
             Arguments:
                 update - boolean that tells if photo was updated
@@ -128,8 +91,9 @@ class MainWindow:
         self.image(self.image_path)
 
         # Scale image to fit screen
-        scale_ratio = getScaleRatio(shape=self.image.photo.shape)
-        self.image.set_scale(scale_ratio)
+        scale_ratio = getScaleRatio(shape=self.image.photo.shape, width=WINDOW_WIDTH,
+                                    height=WINDOW_HEIGHT, image_placement=self.image_placement)
+        self.image.setScale(scale_ratio)
 
         # Resize photo to fit window
         resized_image = self.image.resize()
@@ -137,8 +101,8 @@ class MainWindow:
         # Center photo in window
         resized_shape = resized_image.shape
         borders = WINDOW_WIDTH - resized_shape[1]
-        IMAGE_PLACEMENT[0] = borders / 2
-        self.image_preview.place(x=IMAGE_PLACEMENT[0], y=IMAGE_PLACEMENT[1])
+        self.image_placement[0] = borders / 2
+        self.image_preview.place(x=self.image_placement[0], y=self.image_placement[1])
 
         # Convert cv2 image to PIL
         pil_image = opencvToPIL(image=resized_image)
@@ -181,21 +145,11 @@ class MainWindow:
             self.upper_slider.set(SLIDER_RANGE)
         self.convertPhoto()
 
-    # def savePhoto(self, base_path, img_name, image):
-    #     """ Method saves image to file
-    #         Arguments:
-    #             base_path - path where image is located
-    #             img_name - image name
-    #             image - opencv image array to save
-    #     """
-    #     print(base_path + "\\" + img_name.split('.')[0] + "1." + img_name.split('.')[1])
-    #     cv2.imwrite(base_path + "\\" + img_name.split('.')[0] + "2." + img_name.split('.')[1], image)
-
     def convertPhoto(self):
         """Method uses canny filter to process photo and update it - on main window
         in futher there will be possibility to use more cv2 filters"""
-        pil_image = opencvToPIL(self.image.resize(self.image.canny_filter(self.upper_slider.get(),
-                                                                          self.lower_slider.get())))
+        pil_image = opencvToPIL(self.image.resize(self.image.cannyFilter(self.upper_slider.get(),
+                                                                         self.lower_slider.get())))
         # Update image label to show converted photo
         self.image_preview.image = pil_image
         self.image_preview.configure(image=pil_image)
