@@ -13,7 +13,7 @@ from PyQt5.QtGui import QPixmap, QImage
 from TargetImage import TargetImage
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtWidgets import QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QFileDialog, QMessageBox, QSizePolicy
 
 
 class Ui_MainWindow(object):
@@ -126,8 +126,13 @@ class Ui_MainWindow(object):
 
         self.actionOpenFile = QtWidgets.QAction(MainWindow)
         self.actionOpenFile.setObjectName("actionOpenFile")
+        self.actionOpenFile.setShortcut("Ctrl+O")
+
         self.actionSaveFile = QtWidgets.QAction(MainWindow)
         self.actionSaveFile.setObjectName("actionSaveFile")
+        self.actionSaveFile.setShortcut("Ctrl+S")
+        self.actionSaveFile.setStatusTip('Save File')
+        self.actionSaveFile.triggered.connect(self.saveFile)
 
         self.actionAutoProcessing = QtWidgets.QAction(MainWindow)
         self.actionAutoProcessing.setObjectName("actionAutoProcessing")
@@ -140,6 +145,11 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         self.selectFilterWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def saveFile(self):
+        if self.video is None and self.image:
+
+
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -170,7 +180,7 @@ class Ui_MainWindow(object):
             self.showDialog("Wybrano więcej niż jeden plik! \nTylko pierwszy z plików będzie używany")
 
         self.processed_path = file_explorer[0][0]
-        self.checkPath()
+        self.loadFile()
 
     def showDialog(self, text):
         warning_message = QMessageBox()
@@ -184,30 +194,32 @@ class Ui_MainWindow(object):
         filters_dict = {"canny": self.image.cannyFilter}
         filters_arg = {"canny": [self.rightSlider.value(), self.leftSlider.value()]}
 
-        for filter in filters_dict:
-            filters_dict[filter](filters_arg[filter][0], filters_arg[filter][1])
+        for filter_name in filters_dict:
+            filters_dict[filter_name](filters_arg[filter_name])
         # TODO:
-        #   -fix that
+        #   - fix processed preview
+        print(self.processedView.size())
+        print(self.originalView.size())
+
+        # img = self.image.resize(image=self.image.processed, dimensions=[371, 321])
+        # TODO:
+        #   -move to method
         shape = self.image.processed.shape
-        print(shape)
-        bytesPerLine = 3 * shape[1]
-        # if len(shape == 3):
-        #     qImg = QImage(self.image.processed.data, shape[1], shape[0], bytesPerLine,
-        #                   QImage.Format_RGB888).rgbSwapped()
-        # else:
-        qImg = QImage(self.image.processed.data, shape[1], shape[0], bytesPerLine, QImage.Format_RGB888)
+
+        if len(shape) > 2:
+            bytesPerLine = 3 * shape[1]
+            qImg = QImage(self.image.processed.data, shape[1], shape[0], bytesPerLine,
+                          QImage.Format_RGB888).rgbSwapped()
+
+        else:
+            bytesPerLine = shape[1]
+            qImg = QImage(self.image.processed.data, shape[1], shape[0], bytesPerLine,
+                          QImage.Format_Mono)
+
         pixmap = QPixmap(qImg)
         self.processedView.setPixmap(pixmap)
 
-        # if self.image:
-        #     #ADD HERE PROCESSING BY DICTIONARY
-        #     self.image.cannyFilter()
-        #     #update preview
-        #     # height width channel
-
-
-
-    def checkPath(self):
+    def loadFile(self):
         mime = magic.Magic(mime=True)
         filename = mime.from_file(self.processed_path)
 
@@ -215,7 +227,6 @@ class Ui_MainWindow(object):
             print('it is video')
 
         elif filename.find('image') != -1:
-            print('it is image')
             self.image = TargetImage()
             self.image(path=self.processed_path)
             self.video = None
@@ -226,6 +237,11 @@ class Ui_MainWindow(object):
             self.originalView.setScaledContents(True)
             self.processedView.setScaledContents(True)
 
+            self.originalView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            self.processedView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+            # TODO:
+            #   -move to method
             height, width, channel = self.image.photo.shape
             bytesPerLine = 3 * width
             qImg = QImage(self.image.photo.data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()

@@ -10,22 +10,18 @@ class TargetImage:
     def __call__(self, path):
         self.photo = cv2.imread(path)
 
-    def cannyFilter(self, lower_threshold, upper_threshold):
-        self.processed = cv2.Canny(self.photo, lower_threshold, upper_threshold)
+    def cannyFilter(self, thresholds):
+        self.processed = cv2.Canny(self.photo, thresholds[0], thresholds[1])
         return self.processed
 
-    def setScale(self, scale):
-        self.scale_ratio = scale
-
-    def resize(self, image=None):
+    def resize(self, image=None, dimensions=None):
+        if dimensions is None:
+            dimensions = [100, 100]
         if image is None:
             image_shape = self.photo.shape
             resized_image = cv2.resize(self.photo,
                                        [int(image_shape[1] * self.scale_ratio), int(image_shape[0] * self.scale_ratio)])
         else:
-            image_shape = image.shape
-            resized_image = cv2.resize(image,
-                                       [int(image_shape[1] * self.scale_ratio),
-                                        int(image_shape[0] * self.scale_ratio)])
+            resized_image = cv2.resize(image, dimensions)
         return resized_image
 
