@@ -10,10 +10,15 @@ import imghdr
 import magic
 from PyQt5.QtGui import QPixmap, QImage
 
+from CustomSlider import CustomSlider
 from TargetImage import TargetImage
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QSizePolicy
+
+from utils import updatePreview
+
+SLIDER_RANGE = 600
 
 
 class Ui_MainWindow(object):
@@ -43,6 +48,13 @@ class Ui_MainWindow(object):
         self.processedView.setObjectName("processedView")
         self.processedView.setVisible(False)
 
+        # TODO:
+        #   -use that custom slider widget
+        # self.leftSlider = CustomSlider(window=self.centralwidget,
+        #                                geometry=QtCore.QRect(650, 370, 71, 160))
+        # self.rightSlider = CustomSlider(window=self.centralwidget,
+        #                                 geometry=QtCore.QRect(720, 369, 61, 161))
+
         self.leftSlider = QtWidgets.QSlider(self.centralwidget)
         self.leftSlider.setGeometry(QtCore.QRect(650, 370, 71, 160))
         self.leftSlider.setMaximum(600)
@@ -50,20 +62,17 @@ class Ui_MainWindow(object):
         self.leftSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.leftSlider.setObjectName("leftSlider")
         self.leftSlider.setVisible(False)
+        self.leftSlider.sliderReleased.connect(self.limitSliders)
 
         self.rightSlider = QtWidgets.QSlider(self.centralwidget)
         self.rightSlider.setGeometry(QtCore.QRect(720, 369, 61, 161))
-        self.rightSlider.setMaximum(600)
+        self.rightSlider.setMaximum(SLIDER_RANGE)
         self.rightSlider.setProperty("value", 80)
         self.rightSlider.setOrientation(QtCore.Qt.Vertical)
         self.rightSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.rightSlider.setObjectName("rightSlider")
         self.rightSlider.setVisible(False)
-
-        self.selectFileButton = QtWidgets.QPushButton(self.centralwidget)
-        self.selectFileButton.setGeometry(QtCore.QRect(360, 250, 75, 23))
-        self.selectFileButton.setObjectName("selectFileButton")
-        self.selectFileButton.clicked.connect(self.browseFiles)
+        self.rightSlider.sliderReleased.connect(self.limitSliders)
 
         self.leftSpinBox = QtWidgets.QSpinBox(self.centralwidget)
         self.leftSpinBox.setGeometry(QtCore.QRect(660, 540, 42, 22))
@@ -78,6 +87,13 @@ class Ui_MainWindow(object):
         self.rightSpinBox.setMaximum(600)
         self.rightSpinBox.setObjectName("rightSpinBox")
         self.rightSpinBox.setVisible(False)
+
+        self.limitSliders()
+
+        self.selectFileButton = QtWidgets.QPushButton(self.centralwidget)
+        self.selectFileButton.setGeometry(QtCore.QRect(360, 250, 75, 23))
+        self.selectFileButton.setObjectName("selectFileButton")
+        self.selectFileButton.clicked.connect(self.browseFiles)
 
         self.frame = QtWidgets.QFrame(self.centralwidget)
         self.frame.setGeometry(QtCore.QRect(10, 0, 781, 341))
@@ -148,14 +164,14 @@ class Ui_MainWindow(object):
 
     def saveFile(self):
         if self.video is None and self.image:
-
-
+            print("save file")
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.processButton.setText(_translate("MainWindow", "Przetwarzaj"))
         self.processButton.clicked.connect(self.process)
+
         self.selectFileButton.setText(_translate("MainWindow", "Wybierz plik"))
         self.selectFilterWidget.setTabText(self.selectFilterWidget.indexOf(self.tab), _translate("MainWindow", "1"))
         self.selectFilterWidget.setTabText(self.selectFilterWidget.indexOf(self.tab_2), _translate("MainWindow", "+"))
@@ -166,6 +182,16 @@ class Ui_MainWindow(object):
         self.actionOpenFile.triggered.connect(self.browseFiles)
         self.actionSaveFile.setText(_translate("MainWindow", "Zapisz plik"))
         self.actionAutoProcessing.setText(_translate("MainWindow", "Auto-przetwarzanie"))
+
+
+
+    def limitSliders(self):
+        #TODO:
+        #   -CHANGE LIMITING TO MOVEMENT BLOCK
+        self.rightSlider.setMinimum(self.leftSlider.value())
+        self.leftSlider.setMaximum(self.rightSlider.value())
+        self.rightSpinBox.setValue(self.rightSlider.value())
+        self.leftSpinBox.setValue(self.leftSlider.value())
 
     def browseFiles(self):
         file_explorer = QFileDialog.getOpenFileNames(filter="Images (*.jpg *.jpeg *.jpe *.jif *.jfif *.jfi *.gif *.png *.bmp);;"
@@ -202,22 +228,10 @@ class Ui_MainWindow(object):
         print(self.originalView.size())
 
         # img = self.image.resize(image=self.image.processed, dimensions=[371, 321])
-        # TODO:
-        #   -move to method
-        shape = self.image.processed.shape
 
-        if len(shape) > 2:
-            bytesPerLine = 3 * shape[1]
-            qImg = QImage(self.image.processed.data, shape[1], shape[0], bytesPerLine,
-                          QImage.Format_RGB888).rgbSwapped()
+        updatePreview(self.image.processed, self.processedView)
 
-        else:
-            bytesPerLine = shape[1]
-            qImg = QImage(self.image.processed.data, shape[1], shape[0], bytesPerLine,
-                          QImage.Format_Mono)
 
-        pixmap = QPixmap(qImg)
-        self.processedView.setPixmap(pixmap)
 
     def loadFile(self):
         mime = magic.Magic(mime=True)
@@ -240,14 +254,9 @@ class Ui_MainWindow(object):
             self.originalView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             self.processedView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-            # TODO:
-            #   -move to method
-            height, width, channel = self.image.photo.shape
-            bytesPerLine = 3 * width
-            qImg = QImage(self.image.photo.data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
-            pixmap = QPixmap(qImg)
-            self.originalView.setPixmap(pixmap)
-            self.processedView.setPixmap(pixmap)
+            updatePreview(self.image.photo, self.originalView)
+            updatePreview(self.image.photo, self.processedView)
+
 
         else:
             self.showDialog("Wybrano niepoprawny format pliku!")
@@ -257,7 +266,10 @@ class Ui_MainWindow(object):
         self.selectFilterWidget.setVisible(True)
         self.rightSlider.setVisible(True)
         self.leftSlider.setVisible(True)
+        self.rightSpinBox.setVisible(True)
+        self.leftSpinBox.setVisible(True)
         self.processButton.setVisible(True)
+
 
 if __name__ == "__main__":
     import sys

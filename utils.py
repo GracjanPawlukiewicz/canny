@@ -1,5 +1,6 @@
 from PIL import Image, ImageTk
 import cv2
+from PyQt5.QtGui import QImage, QPixmap
 
 
 def opencvToPIL(image):
@@ -40,3 +41,18 @@ def getScaleRatio(shape, height, width, image_placement):
     else:
         return height_scale_ratio
 
+def updatePreview(image, preview):
+    shape = image.shape
+
+    if len(shape) > 2:
+        bytesPerLine = 3 * shape[1]
+        qImg = QImage(image.data, shape[1], shape[0], bytesPerLine,
+                      QImage.Format_RGB888).rgbSwapped()
+
+    else:
+        bytesPerLine = shape[1]
+        qImg = QImage(image.data, shape[1], shape[0], bytesPerLine,
+                      QImage.Format_Mono)
+
+    pixmap = QPixmap(qImg)
+    preview.setPixmap(pixmap)
