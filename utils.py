@@ -50,9 +50,8 @@ def updatePreview(image, preview):
                       QImage.Format_RGB888).rgbSwapped()
 
     else:
-        bytesPerLine = shape[1]
-        qImg = QImage(image.data, shape[1], shape[0], bytesPerLine,
-                      QImage.Format_Mono)
+        qImg = QImage(image.data, shape[1], shape[0],
+                      QImage.Format_Grayscale8)
 
     pixmap = QPixmap(qImg)
     preview.setPixmap(pixmap)
