@@ -9,6 +9,9 @@
 import imghdr
 import magic
 from PyQt5.QtGui import QPixmap, QImage
+from qtrangeslider import QRangeSlider
+
+
 
 from CustomSlider import CustomSlider
 from TargetImage import TargetImage
@@ -48,47 +51,34 @@ class Ui_MainWindow(object):
         self.processedView.setObjectName("processedView")
         self.processedView.setVisible(False)
 
-        # TODO:
-        #   -use that custom slider widget
-        # self.leftSlider = CustomSlider(window=self.centralwidget,
-        #                                geometry=QtCore.QRect(650, 370, 71, 160))
-        # self.rightSlider = CustomSlider(window=self.centralwidget,
-        #                                 geometry=QtCore.QRect(720, 369, 61, 161))
+        self.rangeSlider = QRangeSlider(self.centralwidget)
+        self.rangeSlider.setGeometry(QtCore.QRect(550, 450, 180, 20))
+        self.rangeSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.rangeSlider.setOrientation(QtCore.Qt.Horizontal)
+        self.rangeSlider.setObjectName("rangeSlider")
 
-        self.leftSlider = QtWidgets.QSlider(self.centralwidget)
-        self.leftSlider.setGeometry(QtCore.QRect(650, 370, 71, 160))
-        self.leftSlider.setMaximum(600)
-        self.leftSlider.setOrientation(QtCore.Qt.Vertical)
-        self.leftSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
-        self.leftSlider.setObjectName("leftSlider")
-        self.leftSlider.setVisible(False)
-        self.leftSlider.sliderReleased.connect(self.limitSliders)
+        self.rangeSlider.setMinimum(0)
+        self.rangeSlider.setMaximum(SLIDER_RANGE)
+        self.rangeSlider.valueChanged.connect(self.updateSpinbox)
+        self.rangeSlider.setVisible(False)
 
-        self.rightSlider = QtWidgets.QSlider(self.centralwidget)
-        self.rightSlider.setGeometry(QtCore.QRect(720, 369, 61, 161))
-        self.rightSlider.setMaximum(SLIDER_RANGE)
-        self.rightSlider.setProperty("value", 80)
-        self.rightSlider.setOrientation(QtCore.Qt.Vertical)
-        self.rightSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
-        self.rightSlider.setObjectName("rightSlider")
-        self.rightSlider.setVisible(False)
-        self.rightSlider.sliderReleased.connect(self.limitSliders)
 
         self.leftSpinBox = QtWidgets.QSpinBox(self.centralwidget)
-        self.leftSpinBox.setGeometry(QtCore.QRect(660, 540, 42, 22))
+        self.leftSpinBox.setGeometry(QtCore.QRect(520, 450, 25, 20))
         self.leftSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.leftSpinBox.setMaximum(600)
         self.leftSpinBox.setObjectName("leftSpinBox")
         self.leftSpinBox.setVisible(False)
 
+
         self.rightSpinBox = QtWidgets.QSpinBox(self.centralwidget)
-        self.rightSpinBox.setGeometry(QtCore.QRect(730, 540, 42, 22))
+        self.rightSpinBox.setGeometry(QtCore.QRect(740, 450, 25, 20))
         self.rightSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.rightSpinBox.setMaximum(600)
         self.rightSpinBox.setObjectName("rightSpinBox")
         self.rightSpinBox.setVisible(False)
 
-        self.limitSliders()
+        self.updateSpinbox()
 
         self.selectFileButton = QtWidgets.QPushButton(self.centralwidget)
         self.selectFileButton.setGeometry(QtCore.QRect(360, 250, 75, 23))
@@ -118,8 +108,7 @@ class Ui_MainWindow(object):
         self.processButton.raise_()
         self.originalView.raise_()
         self.processedView.raise_()
-        self.leftSlider.raise_()
-        self.rightSlider.raise_()
+        self.rangeSlider.raise_()
         self.selectFileButton.raise_()
         self.leftSpinBox.raise_()
         self.rightSpinBox.raise_()
@@ -183,20 +172,20 @@ class Ui_MainWindow(object):
         self.actionSaveFile.setText(_translate("MainWindow", "Zapisz plik"))
         self.actionAutoProcessing.setText(_translate("MainWindow", "Auto-przetwarzanie"))
 
+    def updateSpinbox(self):
+        values = self.rangeSlider.value()
+        self.leftSpinBox.setValue(values[0])
+        self.leftSpinBox.setMaximum(values[1])
 
+        self.rightSpinBox.setValue(values[1])
+        self.rightSpinBox.setMinimum(values[0])
 
-    def limitSliders(self):
-        #TODO:
-        #   -CHANGE LIMITING TO MOVEMENT BLOCK
-        self.rightSlider.setMinimum(self.leftSlider.value())
-        self.leftSlider.setMaximum(self.rightSlider.value())
-        self.rightSpinBox.setValue(self.rightSlider.value())
-        self.leftSpinBox.setValue(self.leftSlider.value())
 
     def browseFiles(self):
-        file_explorer = QFileDialog.getOpenFileNames(filter="Images (*.jpg *.jpeg *.jpe *.jif *.jfif *.jfi *.gif *.png *.bmp);;"
-                                                            "Videos (*.mp4 *.mov *.wmv *.avi *.avchd *.f4v *.flv *.swf *.m4p *.m4v);;"
-                                                            "All files (*.*)")
+        file_explorer = QFileDialog.getOpenFileNames(
+            filter="Images (*.jpg *.jpeg *.jpe *.jif *.jfif *.jfi *.gif *.png *.bmp);;"
+                   "Videos (*.mp4 *.mov *.wmv *.avi *.avchd *.f4v *.flv *.swf *.m4p *.m4v);;"
+                   "All files (*.*)")
 
         if not file_explorer[0]:
             self.showDialog("Nie wybrano żadnego pliku")
@@ -218,7 +207,7 @@ class Ui_MainWindow(object):
     def process(self):
         print(self.image)
         filters_dict = {"canny": self.image.cannyFilter}
-        filters_arg = {"canny": [self.rightSlider.value(), self.leftSlider.value()]}
+        filters_arg = {"canny": self.rangeSlider.value()}
 
         for filter_name in filters_dict:
             filters_dict[filter_name](filters_arg[filter_name])
@@ -230,8 +219,6 @@ class Ui_MainWindow(object):
         # img = self.image.resize(image=self.image.processed, dimensions=[371, 321])
 
         updatePreview(self.image.processed, self.processedView)
-
-
 
     def loadFile(self):
         mime = magic.Magic(mime=True)
@@ -264,15 +251,16 @@ class Ui_MainWindow(object):
 
         self.selectFileButton.setVisible(False)
         self.selectFilterWidget.setVisible(True)
-        self.rightSlider.setVisible(True)
-        self.leftSlider.setVisible(True)
+        self.rangeSlider.setVisible(True)
         self.rightSpinBox.setVisible(True)
         self.leftSpinBox.setVisible(True)
         self.processButton.setVisible(True)
 
 
+
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
