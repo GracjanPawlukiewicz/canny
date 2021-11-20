@@ -9,6 +9,7 @@
 import imghdr
 import magic
 import os
+import sys
 
 from CustomSlider import CustomSlider
 from TargetImage import TargetImage
@@ -19,23 +20,23 @@ from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QSizePolicy
 from qtrangeslider import QRangeSlider
 
-from utils import update_preview
+from utils import update_preview, show_info_dialog, open_save_explorer
 
 SLIDER_RANGE = 600
 IMAGES_FORMATS = "Images (*.jpg *.jpeg *.jpe *.jif *.jfif *.jfi *.gif *.png *.bmp);;"
 VIDEOS_FORMATS = "Videos (*.mp4 *.mov *.wmv *.avi *.avchd *.f4v *.flv *.swf *.m4p *.m4v);;"
 
-class Ui_MainWindow(object):
+class UiMainWindow(object):
     def __init__(self):
         self.image = None
         self.video = None
         self.processed_path = None
         self.already_saved = False
 
-    def setup_ui(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(801, 605)
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
+    def setup_ui(self, main_window):
+        main_window.setObjectName("MainWindow")
+        main_window.resize(801, 605)
+        self.centralwidget = QtWidgets.QWidget(main_window)
         self.centralwidget.setObjectName("centralwidget")
 
         self.processButton = QtWidgets.QPushButton(self.centralwidget)
@@ -64,14 +65,12 @@ class Ui_MainWindow(object):
         self.rangeSlider.valueChanged.connect(self.update_spinboxes)
         self.rangeSlider.setVisible(False)
 
-
         self.leftSpinBox = QtWidgets.QSpinBox(self.centralwidget)
         self.leftSpinBox.setGeometry(QtCore.QRect(520, 450, 25, 20))
         self.leftSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.leftSpinBox.setMaximum(600)
         self.leftSpinBox.setObjectName("leftSpinBox")
         self.leftSpinBox.setVisible(False)
-
 
         self.rightSpinBox = QtWidgets.QSpinBox(self.centralwidget)
         self.rightSpinBox.setGeometry(QtCore.QRect(740, 450, 25, 20))
@@ -116,34 +115,33 @@ class Ui_MainWindow(object):
         self.rightSpinBox.raise_()
         self.selectFilterWidget.raise_()
 
-        MainWindow.setCentralWidget(self.centralwidget)
+        main_window.setCentralWidget(self.centralwidget)
 
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.menubar = QtWidgets.QMenuBar(main_window)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 801, 21))
         self.menubar.setObjectName("menubar")
         self.fileMenu = QtWidgets.QMenu(self.menubar)
         self.fileMenu.setObjectName("menuPlik")
         self.helpMenu = QtWidgets.QMenu(self.menubar)
         self.helpMenu.setObjectName("menuPomoc")
-        MainWindow.setMenuBar(self.menubar)
+        main_window.setMenuBar(self.menubar)
 
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar = QtWidgets.QStatusBar(main_window)
         self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
+        main_window.setStatusBar(self.statusbar)
 
-        self.actionOpenFile = QtWidgets.QAction(MainWindow)
+        self.actionOpenFile = QtWidgets.QAction(main_window)
         self.actionOpenFile.setObjectName("actionOpenFile")
         self.actionOpenFile.setShortcut("Ctrl+O")
         self.actionOpenFile.triggered.connect(self.get_file_path)
 
-
-        self.actionSaveFile = QtWidgets.QAction(MainWindow)
+        self.actionSaveFile = QtWidgets.QAction(main_window)
         self.actionSaveFile.setObjectName("actionSaveFile")
         self.actionSaveFile.setShortcut("Ctrl+S")
         self.actionSaveFile.setStatusTip('Save File')
         self.actionSaveFile.triggered.connect(self.save_file)
 
-        self.actionAutoProcessing = QtWidgets.QAction(MainWindow)
+        self.actionAutoProcessing = QtWidgets.QAction(main_window)
         self.actionAutoProcessing.setObjectName("actionAutoProcessing")
         self.fileMenu.addAction(self.actionOpenFile)
         self.fileMenu.addAction(self.actionSaveFile)
@@ -151,36 +149,35 @@ class Ui_MainWindow(object):
 
         self.menubar.addAction(self.fileMenu.menuAction())
         self.menubar.addAction(self.helpMenu.menuAction())
-        self.retranslate_ui(MainWindow)
+        self.retranslate_ui(main_window)
         self.selectFilterWidget.setCurrentIndex(0)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(main_window)
+
 
     def save_file(self):
         if self.video is None and self.image is None:
-            self.show_dialog("Brak pliku do zapisu!")
+            show_info_dialog("Brak pliku do zapisu!")
             return False
 
         elif self.video is None and self.image:
             if self.image.processed is None:
-                self.show_dialog("Brak pliku do zapisu!")
+                show_info_dialog("Brak pliku do zapisu!")
             else:
-                save_path = self.open_save_explorer(self.image.extension)
-                save_path = '.'.join([save_path[0], self.image.extension])
-                #TODO:
-                #   -add check if file exist - then ask for overwrite
+                save_path = open_save_explorer(target=self.image,
+                                               filter_string=IMAGES_FORMATS)
 
-                print(save_path)
+                save_path = '.'.join([save_path[0], self.image.extension])
                 self.image.save(save_path)
 
         elif self.image is None and self.video:
             if self.video.processed is None:
-                self.show_dialog("Brak pliku do zapisu!")
+                show_info_dialog("Brak pliku do zapisu!")
             else:
                 print("save video file")
 
-    def retranslate_ui(self, MainWindow):
+    def retranslate_ui(self, main_window):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        main_window.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.processButton.setText(_translate("MainWindow", "Przetwarzaj"))
         self.processButton.clicked.connect(self.process_target)
 
@@ -202,34 +199,21 @@ class Ui_MainWindow(object):
         self.rightSpinBox.setValue(values[1])
         self.rightSpinBox.setMinimum(values[0])
 
-    def open_save_explorer(self, extension):
-        file_explorer = QFileDialog.getSaveFileName(filter=f"Format (.{extension})")
-        if file_explorer[0] == '':
-            self.show_dialog("Anulowano zapis pliku!")
-        return file_explorer
-
     def get_file_path(self):
-        file_explorer = QFileDialog.getOpenFileNames(
+        path = QFileDialog.getOpenFileNames(
             filter=IMAGES_FORMATS +
                    VIDEOS_FORMATS +
                    "All files (*.*)")
 
-        if not file_explorer[0]:
-            self.show_dialog("Nie wybrano żadnego pliku")
+        if not path[0]:
+            show_info_dialog("Nie wybrano żadnego pliku")
             return False
 
-        elif len(file_explorer[0]) > 1:
-            self.show_dialog("Wybrano więcej niż jeden plik! \nTylko pierwszy z plików będzie używany")
+        elif len(path[0]) > 1:
+            show_info_dialog("Wybrano więcej niż jeden plik! \nTylko pierwszy z plików będzie używany")
 
-        self.processed_path = file_explorer[0][0]
+        self.processed_path = path[0][0]
         self.load_file()
-
-    def show_dialog(self, text):
-        warning_message = QMessageBox()
-        warning_message.setIcon(QMessageBox.Information)
-        warning_message.setWindowTitle("Uwaga!")
-        warning_message.setText(text)
-        warning_message.exec_()
 
     def process_target(self):
         print(self.image)
@@ -238,12 +222,6 @@ class Ui_MainWindow(object):
 
         for filter_name in filters_dict:
             filters_dict[filter_name](filters_arg[filter_name])
-        # TODO:
-        #   - fix processed preview
-        print(self.processedView.size())
-        print(self.originalView.size())
-
-        # img = self.image.resize(image=self.image.processed, dimensions=[371, 321])
 
         update_preview(self.image.processed, self.processedView)
 
@@ -272,7 +250,7 @@ class Ui_MainWindow(object):
             update_preview(self.image.photo, self.processedView)
 
         else:
-            self.show_dialog("Wybrano niepoprawny format pliku!")
+            show_info_dialog("Wybrano niepoprawny format pliku!")
             return False
 
         self.selectFileButton.setVisible(False)
@@ -282,12 +260,11 @@ class Ui_MainWindow(object):
         self.leftSpinBox.setVisible(True)
         self.processButton.setVisible(True)
 
-if __name__ == "__main__":
-    import sys
 
+if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
+    ui = UiMainWindow()
     ui.setup_ui(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
