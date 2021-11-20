@@ -22,13 +22,15 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox, QSizePolicy
 from utils import updatePreview
 
 SLIDER_RANGE = 600
-
+IMAGES_FORMATS = "Images (*.jpg *.jpeg *.jpe *.jif *.jfif *.jfi *.gif *.png *.bmp);;"
+VIDEOS_FORMATS = "Videos (*.mp4 *.mov *.wmv *.avi *.avchd *.f4v *.flv *.swf *.m4p *.m4v);;"
 
 class Ui_MainWindow(object):
     def __init__(self):
         self.image = None
         self.video = None
         self.processed_path = None
+        self.already_saved = False
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -132,6 +134,8 @@ class Ui_MainWindow(object):
         self.actionOpenFile = QtWidgets.QAction(MainWindow)
         self.actionOpenFile.setObjectName("actionOpenFile")
         self.actionOpenFile.setShortcut("Ctrl+O")
+        self.actionOpenFile.triggered.connect(self.browseFiles)
+
 
         self.actionSaveFile = QtWidgets.QAction(MainWindow)
         self.actionSaveFile.setObjectName("actionSaveFile")
@@ -152,8 +156,27 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def saveFile(self):
-        if self.video is None and self.image:
-            print("save file")
+        if self.video is None and self.image is None:
+            self.showDialog("Brak pliku do zapisu!")
+            return False
+
+        elif self.video is None and self.image:
+            if self.image.processed is None:
+                self.showDialog("Brak pliku do zapisu!")
+            else:
+                save_path = self.saveFilesExplorer(self.image.extension)
+                save_path = '.'.join([save_path[0], self.image.extension])
+                #TODO:
+                #   -add check if file exist - then ask for overwrite
+
+                print(save_path)
+                self.image.save(save_path)
+
+        elif self.image is None and self.video:
+            if self.video.processed is None:
+                self.showDialog("Brak pliku do zapisu!")
+            else:
+                print("save video file")
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -168,7 +191,6 @@ class Ui_MainWindow(object):
         self.fileMenu.setTitle(_translate("MainWindow", "Plik"))
         self.helpMenu.setTitle(_translate("MainWindow", "Pomoc"))
         self.actionOpenFile.setText(_translate("MainWindow", "Otwórz plik"))
-        self.actionOpenFile.triggered.connect(self.browseFiles)
         self.actionSaveFile.setText(_translate("MainWindow", "Zapisz plik"))
         self.actionAutoProcessing.setText(_translate("MainWindow", "Auto-przetwarzanie"))
 
@@ -181,10 +203,17 @@ class Ui_MainWindow(object):
         self.rightSpinBox.setMinimum(values[0])
 
 
+    def saveFilesExplorer(self, extension):
+        IMAGES_FORMATS
+        file_explorer = QFileDialog.getSaveFileName(filter=f"Format (.{extension})")
+        if file_explorer[0] == '':
+            self.showDialog("Anulowano zapis pliku!")
+        return file_explorer
+
     def browseFiles(self):
         file_explorer = QFileDialog.getOpenFileNames(
-            filter="Images (*.jpg *.jpeg *.jpe *.jif *.jfif *.jfi *.gif *.png *.bmp);;"
-                   "Videos (*.mp4 *.mov *.wmv *.avi *.avchd *.f4v *.flv *.swf *.m4p *.m4v);;"
+            filter=IMAGES_FORMATS +
+                   VIDEOS_FORMATS +
                    "All files (*.*)")
 
         if not file_explorer[0]:

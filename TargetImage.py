@@ -6,9 +6,11 @@ class TargetImage:
         self.scale_ratio = None
         self.photo = None
         self.processed = None
+        self.extension = None
 
     def __call__(self, path):
         self.photo = cv2.imread(path)
+        self.extension = path.split('.')[-1]
 
     def cannyFilter(self, thresholds):
         self.processed = cv2.Canny(self.photo, thresholds[0], thresholds[1])
@@ -24,4 +26,8 @@ class TargetImage:
         else:
             resized_image = cv2.resize(image, dimensions)
         return resized_image
+
+    def save(self, path):
+        cv2.imwrite(path, self.processed)
+
 
