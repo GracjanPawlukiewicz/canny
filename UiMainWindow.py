@@ -166,7 +166,7 @@ class UiMainWindow(object):
                 save_path = open_save_explorer(target=self.image,
                                                filter_string=IMAGES_FORMATS)
 
-                save_path = '.'.join([save_path[0], self.image.extension])
+                save_path = '.'.join([save_path, self.image.extension])
                 self.image.save(save_path)
 
         elif self.image is None and self.video:

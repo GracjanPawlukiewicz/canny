@@ -21,7 +21,6 @@ def open_save_explorer(target, filter_string):
     elif path[0].split('.')[-1] in filter_string:
         split_path = path[0].split('.')
         target.extension = split_path[-1]
-        print(target.extension)
         path = split_path[:-1][0]
 
     return path
