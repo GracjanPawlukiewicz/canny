@@ -12,11 +12,11 @@ class TargetImage:
         self.photo = cv2.imread(path)
         self.extension = path.split('.')[-1]
 
-    def cannyFilter(self, thresholds):
+    def canny_filter(self, thresholds):
         self.processed = cv2.Canny(self.photo, thresholds[0], thresholds[1])
         return self.processed
 
-    def resize(self, image=None, dimensions=None):
+    def resize_image(self, image=None, dimensions=None):
         if dimensions is None:
             dimensions = [100, 100]
         if image is None:

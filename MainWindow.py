@@ -96,7 +96,7 @@ class MainWindow:
         self.image.setScale(scale_ratio)
 
         # Resize photo to fit window
-        resized_image = self.image.resize()
+        resized_image = self.image.resize_image()
 
         # Center photo in window
         resized_shape = resized_image.shape
@@ -148,8 +148,8 @@ class MainWindow:
     def convertPhoto(self):
         """Method uses canny filter to process photo and update it - on main window
         in futher there will be possibility to use more cv2 filters"""
-        pil_image = opencvToPIL(self.image.resize(self.image.cannyFilter(self.upper_slider.get(),
-                                                                         self.lower_slider.get())))
+        pil_image = opencvToPIL(self.image.resize_image(self.image.canny_filter(self.upper_slider.get(),
+                                                                                self.lower_slider.get())))
         # Update image label to show converted photo
         self.image_preview.image = pil_image
         self.image_preview.configure(image=pil_image)
