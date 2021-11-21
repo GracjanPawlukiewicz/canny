@@ -1,5 +1,3 @@
-from PIL import Image, ImageTk
-import cv2
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 
