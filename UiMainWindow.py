@@ -20,6 +20,7 @@ from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QSizePolicy
 from qtrangeslider import QRangeSlider
 
+from TargetVideo import TargetVideo
 from utils import update_preview, show_info_dialog, open_save_explorer
 
 SLIDER_RANGE = 600
@@ -30,7 +31,6 @@ class UiMainWindow(object):
     def __init__(self):
         self.image = None
         self.video = None
-        self.processed_path = None
         self.already_saved = False
 
     def setup_ui(self, main_window):
@@ -155,6 +155,8 @@ class UiMainWindow(object):
 
 
     def save_file(self):
+        #TODO:
+        # -refactor pointing to self.video and self.image to self.file
         if self.video is None and self.image is None:
             show_info_dialog("Brak pliku do zapisu!")
             return False
@@ -166,14 +168,17 @@ class UiMainWindow(object):
                 save_path = open_save_explorer(target=self.image,
                                                filter_string=IMAGES_FORMATS)
 
-                save_path = '.'.join([save_path, self.image.extension])
                 self.image.save(save_path)
 
         elif self.image is None and self.video:
-            if self.video.processed is None:
-                show_info_dialog("Brak pliku do zapisu!")
+            if self.video.processed:
+                save_path = open_save_explorer(target=self.video,
+                                               filter_string=VIDEOS_FORMATS)
+
+                self.video.save(save_path)
             else:
-                print("save video file")
+                show_info_dialog("Brak pliku do zapisu!")
+
 
     def retranslate_ui(self, main_window):
         _translate = QtCore.QCoreApplication.translate
@@ -212,29 +217,32 @@ class UiMainWindow(object):
         elif len(path[0]) > 1:
             show_info_dialog("Wybrano więcej niż jeden plik! \nTylko pierwszy z plików będzie używany")
 
-        self.processed_path = path[0][0]
-        self.load_file()
+        self.load_file(path[0][0])
 
     def process_target(self):
-        print(self.image)
+        # CHANGE TO VIDEO!!!
         filters_dict = {"canny": self.image.canny_filter}
         filters_arg = {"canny": self.rangeSlider.value()}
 
         for filter_name in filters_dict:
             filters_dict[filter_name](filters_arg[filter_name])
-
+        # REMVOE FOR VIDEO!!!
         update_preview(self.image.processed, self.processedView)
 
-    def load_file(self):
+        print("video zrobione ;)")
+
+    def load_file(self, path):
         mime = magic.Magic(mime=True)
-        filename = mime.from_file(self.processed_path)
+        filename = mime.from_file(path)
 
         if filename.find('video') != -1:
-            print('it is video')
+            self.video = TargetVideo()
+            self.video(path=path)
+            print("jedziemy z video")
 
         elif filename.find('image') != -1:
             self.image = TargetImage()
-            self.image(path=self.processed_path)
+            self.image(path=path)
             self.video = None
 
             self.originalView.setVisible(True)
@@ -246,8 +254,8 @@ class UiMainWindow(object):
             self.originalView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             self.processedView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-            update_preview(self.image.photo, self.originalView)
-            update_preview(self.image.photo, self.processedView)
+            update_preview(self.image.target, self.originalView)
+            update_preview(self.image.target, self.processedView)
 
         else:
             show_info_dialog("Wybrano niepoprawny format pliku!")

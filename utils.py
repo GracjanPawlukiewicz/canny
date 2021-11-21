@@ -22,8 +22,9 @@ def open_save_explorer(target, filter_string):
         split_path = path[0].split('.')
         target.extension = split_path[-1]
         path = split_path[:-1][0]
+        save_path = '.'.join([path, target.extension])
 
-    return path
+    return save_path
 
 
 def update_preview(image, preview):
