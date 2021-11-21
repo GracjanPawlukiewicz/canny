@@ -29,8 +29,7 @@ VIDEOS_FORMATS = "Videos (*.mp4 *.mov *.wmv *.avi *.avchd *.f4v *.flv *.swf *.m4
 
 class UiMainWindow(object):
     def __init__(self):
-        self.image = None
-        self.video = None
+        self.source = None
         self.already_saved = False
 
     def setup_ui(self, main_window):
@@ -155,29 +154,39 @@ class UiMainWindow(object):
 
 
     def save_file(self):
-        #TODO:
-        # -refactor pointing to self.video and self.image to self.file
-        if self.video is None and self.image is None:
+        if self.source is None:
             show_info_dialog("Brak pliku do zapisu!")
             return False
 
-        elif self.video is None and self.image:
-            if self.image.processed is None:
-                show_info_dialog("Brak pliku do zapisu!")
+        elif self.source:
+            #TODO:
+            #   -figure out why source.processed gives exception for image even when it gots it
+            if len(self.source.processed) > 0:
+
+                if self.source.extension in IMAGES_FORMATS:
+                    save_path = open_save_explorer(target=self.source,
+                                                   filter_string=IMAGES_FORMATS)
+                else:
+                    save_path = open_save_explorer(target=self.source,
+                                                   filter_string=VIDEOS_FORMATS)
+
+                if save_path:
+                    self.source.save(save_path)
+                else:
+                    show_info_dialog("Nie podano ścieżki \nAnulowano zapis pliku!")
+
             else:
-                save_path = open_save_explorer(target=self.image,
-                                               filter_string=IMAGES_FORMATS)
-
-                self.image.save(save_path)
-
-        elif self.image is None and self.video:
-            if self.video.processed:
-                save_path = open_save_explorer(target=self.video,
-                                               filter_string=VIDEOS_FORMATS)
-
-                self.video.save(save_path)
-            else:
                 show_info_dialog("Brak pliku do zapisu!")
+
+
+        # elif self.source is None and self.video:
+        #     if self.video.processed:
+        #         save_path = open_save_explorer(target=self.video,
+        #                                        filter_string=VIDEOS_FORMATS)
+        #
+        #         self.video.save(save_path)
+        #     else:
+        #         show_info_dialog("Brak pliku do zapisu!")
 
 
     def retranslate_ui(self, main_window):
@@ -221,29 +230,37 @@ class UiMainWindow(object):
 
     def process_target(self):
         # CHANGE TO VIDEO!!!
-        filters_dict = {"canny": self.image.canny_filter}
+        filters_dict = {"canny": self.source.canny_filter}
         filters_arg = {"canny": self.rangeSlider.value()}
 
         for filter_name in filters_dict:
             filters_dict[filter_name](filters_arg[filter_name])
-        # REMVOE FOR VIDEO!!!
-        update_preview(self.image.processed, self.processedView)
 
-        print("video zrobione ;)")
+        if self.source.extension in IMAGES_FORMATS:
+            update_preview(self.source.processed, self.processedView)
+
 
     def load_file(self, path):
         mime = magic.Magic(mime=True)
         filename = mime.from_file(path)
 
         if filename.find('video') != -1:
-            self.video = TargetVideo()
-            self.video(path=path)
-            print("jedziemy z video")
+            self.source = TargetVideo()
+            self.source(path=path)
+
+            #Temporary disabling preview
+            self.originalView.setVisible(False)
+            self.processedView.setVisible(False)
+
+            self.originalView.setScaledContents(False)
+            self.processedView.setScaledContents(False)
+
+            self.originalView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            self.processedView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         elif filename.find('image') != -1:
-            self.image = TargetImage()
-            self.image(path=path)
-            self.video = None
+            self.source = TargetImage()
+            self.source(path=path)
 
             self.originalView.setVisible(True)
             self.processedView.setVisible(True)
@@ -254,8 +271,8 @@ class UiMainWindow(object):
             self.originalView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             self.processedView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-            update_preview(self.image.target, self.originalView)
-            update_preview(self.image.target, self.processedView)
+            update_preview(self.source.target, self.originalView)
+            update_preview(self.source.target, self.processedView)
 
         else:
             show_info_dialog("Wybrano niepoprawny format pliku!")

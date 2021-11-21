@@ -1,6 +1,5 @@
 import cv2
 
-
 class TargetImage:
     def __init__(self):
         self.scale_ratio = None
