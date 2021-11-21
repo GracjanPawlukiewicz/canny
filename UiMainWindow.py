@@ -14,6 +14,12 @@ SLIDER_RANGE = 600
 IMAGES_FORMATS = "Images (*.jpg *.jpeg *.jpe *.jif *.jfif *.jfi *.gif *.png *.bmp);;"
 VIDEOS_FORMATS = "Videos (*.mp4 *.mov *.wmv *.avi *.avchd *.f4v *.flv *.swf *.m4p *.m4v);;"
 
+#TODO:
+#   -add video processing progress bar
+#   -show video preview
+#   -enable auto-processing for images
+
+
 class UiMainWindow(object):
     def __init__(self):
         self.source = None
