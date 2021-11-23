@@ -1,3 +1,5 @@
+import time
+
 import magic
 import sys
 
@@ -15,9 +17,9 @@ IMAGES_FORMATS = "Images (*.jpg *.jpeg *.jpe *.jif *.jfif *.jfi *.gif *.png *.bm
 VIDEOS_FORMATS = "Videos (*.mp4 *.mov *.wmv *.avi *.avchd *.f4v *.flv *.swf *.m4p *.m4v);;"
 
 #TODO:
-#   -add video processing progress bar
 #   -show video preview
 #   -enable auto-processing for images
+#   -add other filters
 
 
 class UiMainWindow(object):
@@ -35,6 +37,11 @@ class UiMainWindow(object):
         self.processButton.setGeometry(QtCore.QRect(360, 350, 75, 23))
         self.processButton.setObjectName("processButton")
         self.processButton.setVisible(False)
+
+        self.previewButton = QtWidgets.QPushButton(self.centralwidget)
+        self.previewButton.setGeometry(QtCore.QRect(360, 450, 75, 23))
+        self.previewButton.setObjectName("processButton")
+        self.previewButton.setVisible(False)
 
         self.originalView = QtWidgets.QLabel(self.centralwidget)
         self.originalView.setGeometry(QtCore.QRect(20, 10, 371, 321))
@@ -155,12 +162,13 @@ class UiMainWindow(object):
             #   -figure out why source.processed gives exception for image even when it gots it
             if len(self.source.processed) > 0:
 
-                if self.source.extension in IMAGES_FORMATS:
-                    save_path = open_save_explorer(target=self.source,
-                                                   filter_string=IMAGES_FORMATS)
-                else:
+                if self.source.video:
                     save_path = open_save_explorer(target=self.source,
                                                    filter_string=VIDEOS_FORMATS)
+
+                else:
+                    save_path = open_save_explorer(target=self.source,
+                                                   filter_string=IMAGES_FORMATS)
 
                 if save_path:
                     self.source.save(save_path)
@@ -217,8 +225,10 @@ class UiMainWindow(object):
         for filter_name in filters_dict:
             filters_dict[filter_name](filters_arg[filter_name])
 
-        if self.source.extension in IMAGES_FORMATS:
+        if not self.source.video:
             update_preview(self.source.processed, self.processedView)
+        else:
+            self.previewButton.setVisible(True)
 
 
     def load_file(self, path):
@@ -226,8 +236,11 @@ class UiMainWindow(object):
         filename = mime.from_file(path)
 
         if filename.find('video') != -1:
+            self.previewButton.setVisible(False)
             self.source = TargetVideo()
             self.source(path=path)
+
+            self.previewButton.clicked.connect(self.source.play_video)
 
             #Temporary disabling preview
             self.originalView.setVisible(False)

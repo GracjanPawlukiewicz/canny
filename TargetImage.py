@@ -6,6 +6,7 @@ class TargetImage:
         self.target = None
         self.processed = None
         self.extension = None
+        self.video = False
 
     def __call__(self, path):
         self.target = cv2.imread(path)
