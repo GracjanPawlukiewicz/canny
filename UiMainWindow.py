@@ -17,6 +17,7 @@ IMAGES_FORMATS = "Images (*.jpg *.jpeg *.jpe *.jif *.jfif *.jfi *.gif *.png *.bm
 VIDEOS_FORMATS = "Videos (*.mp4 *.mov *.wmv *.avi *.avchd *.f4v *.flv *.swf *.m4p *.m4v);;"
 
 #TODO:
+#   -add comments (XD)
 #   -show video preview
 #   -enable auto-processing for images
 #   -add other filters
