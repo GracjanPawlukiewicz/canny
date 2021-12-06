@@ -42,12 +42,11 @@ class TargetVideo:
         self.processed = array
         self.progress_bar.destroy()
 
-    def play_video(self):
+    def show_preview(self):
         for frame in self.processed:
             cv2.imshow('Processed ', frame)
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
-
 
     def canny_filter(self, thresholds):
         self.progress_bar = ProgressBar()

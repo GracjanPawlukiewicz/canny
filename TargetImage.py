@@ -15,18 +15,11 @@ class TargetImage:
     def canny_filter(self, thresholds):
         self.processed = cv2.Canny(self.target, thresholds[0], thresholds[1])
 
-    def resize_image(self, image=None, dimensions=None):
-        if dimensions is None:
-            dimensions = [100, 100]
-        if image is None:
-            image_shape = self.target.shape
-            resized_image = cv2.resize(self.target,
-                                       [int(image_shape[1] * self.scale_ratio), int(image_shape[0] * self.scale_ratio)])
-        else:
-            resized_image = cv2.resize(image, dimensions)
-        return resized_image
-
     def save(self, path):
         cv2.imwrite(path, self.processed)
+
+    def show_preview(self):
+        if self.processed is not None:
+            cv2.imshow('Processed ', self.processed)
 
 

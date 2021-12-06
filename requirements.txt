@@ -1,0 +1,4 @@
+opencv_python==4.5.4.58
+PyQt5==5.15.4
+python_magic==0.4.24
+QtRangeSlider==0.1.5

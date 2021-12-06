@@ -1,3 +1,4 @@
+from PyQt5 import QtWidgets
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 
@@ -45,3 +46,15 @@ def update_preview(source, preview):
 
     pixmap = QPixmap(q_img)
     preview.setPixmap(pixmap)
+
+
+def create_combobox(index):
+    combo = QtWidgets.QComboBox()
+    combo.addItems(["canny", "grayscale", "dupa "])
+    combo.setObjectName(f"tab_{index}")
+    return combo
+
+
+def create_processing_dictionaries(qtab_widget):
+    return True
+# def add_tab(qtab, last_tab):
