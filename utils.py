@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
+from PyQt5 import QtCore
 
 
 def show_info_dialog(text):
@@ -48,13 +49,18 @@ def update_preview(source, preview):
     preview.setPixmap(pixmap)
 
 
-def create_combobox(index):
+def create_combobox(widget):
+    index = widget.count()
+    print(index)
+    _translate = QtCore.QCoreApplication.translate
     combo = QtWidgets.QComboBox()
     combo.addItems(["canny", "grayscale", "dupa "])
     combo.setObjectName(f"tab_{index}")
+    widget.addTab(combo, "")
+    widget.setTabText(widget.indexOf(combo), _translate("MainWindow", f"{index + 1}"))
+
     return combo
 
 
-def create_processing_dictionaries(qtab_widget):
-    return True
-# def add_tab(qtab, last_tab):
+
+

@@ -16,6 +16,7 @@ SLIDER_RANGE = 600
 IMAGES_FORMATS = "Images (*.jpg *.jpeg *.jpe *.jif *.jfif *.jfi *.gif *.png *.bmp);;"
 VIDEOS_FORMATS = "Videos (*.mp4 *.mov *.wmv *.avi *.avchd *.f4v *.flv *.swf *.m4p *.m4v);;"
 
+
 #TODO:
 #   -add comments (XD)
 #   -increase video quality
@@ -32,7 +33,7 @@ class UiMainWindow(object):
 
     def setup_ui(self, main_window):
         main_window.setObjectName("MainWindow")
-        main_window.resize(860, 530)
+        main_window.resize(860, 545)
         self.centralwidget = QtWidgets.QWidget(main_window)
         self.centralwidget.setObjectName("centralwidget")
 
@@ -100,8 +101,20 @@ class UiMainWindow(object):
         self.selectFilterWidget.setObjectName("selectFilterWidget")
         self.selectFilterWidget.setVisible(False)
 
-        self.tab_0 = create_combobox(0)
-        self.selectFilterWidget.addTab(self.tab_0, "")
+        self.tab_0 = create_combobox(self.selectFilterWidget)
+        # self.selectFilterWidget.addTab(self.tab_0, "")
+
+
+        self.addTabButton = QtWidgets.QPushButton(self.centralwidget)
+        self.addTabButton.setGeometry(QtCore.QRect(130, 435, 30, 23))
+        self.addTabButton.setObjectName("selectFileButton")
+        self.addTabButton.setVisible(False)
+        self.addTabButton.clicked.connect(lambda: create_combobox(self.selectFilterWidget))
+        # self.addTabButton.clicked.connect(lambda x: create_combobox(self.tabs, self.selectFilterWidget))
+
+        # self.tab_1 = create_combobox(1, self.selectFilterWidget)
+        # self.selectFilterWidget.addTab(self.tab_1, "")
+        # self.tabs.append(self.tab_1)
 
         # self.tab_0 = QtWidgets.QWidget()
         # self.tab_0.setObjectName("tab_0")
@@ -193,9 +206,8 @@ class UiMainWindow(object):
 
         self.previewButton.setText(_translate("MainWindow", "Podgląd"))
 
-
+        self.addTabButton.setText(_translate("MainWindow", "+"))
         self.selectFileButton.setText(_translate("MainWindow", "Wybierz plik"))
-        self.selectFilterWidget.setTabText(self.selectFilterWidget.indexOf(self.tab_0), _translate("MainWindow", "1"))
         # self.selectFilterWidget.setTabText(self.selectFilterWidget.indexOf(self.tab_1), _translate("MainWindow", "+"))
 
         self.fileMenu.setTitle(_translate("MainWindow", "Plik"))
@@ -203,7 +215,6 @@ class UiMainWindow(object):
         self.actionOpenFile.setText(_translate("MainWindow", "Otwórz plik"))
         self.actionSaveFile.setText(_translate("MainWindow", "Zapisz plik"))
         self.actionAutoProcessing.setText(_translate("MainWindow", "Auto-przetwarzanie"))
-
 
     def update_spinboxes(self):
         values = self.rangeSlider.value()
@@ -228,11 +239,16 @@ class UiMainWindow(object):
 
         self.load_file(path[0][0])
 
+    def create_processing_dictionaries(self):
+        for index in range(self.selectFilterWidget.count()):
+            print(self.selectFilterWidget.widget(index).currentText())
+
     def process_target(self):
-
-        dd = create_processing_dictionaries(self.selectFilterWidget)
-
-        filters_dict = {"canny": self.source.canny_filter}
+        dd = create_processing_dictionaries()
+        # refactor to support multiple filters
+        filters_dict = {"canny": self.source.canny_filter,
+                        # "grayscale": self.source.grayscale
+                        }
         filters_arg = {"canny": self.rangeSlider.value()}
 
         for filter_name in filters_dict:
@@ -279,6 +295,7 @@ class UiMainWindow(object):
         self.previewButton.clicked.connect(self.source.show_preview)
         self.previewButton.setVisible(False)
         self.selectFileButton.setVisible(False)
+        self.addTabButton.setVisible(True)
         self.selectFilterWidget.setVisible(True)
         self.rangeSlider.setVisible(True)
         self.rightSpinBox.setVisible(True)
