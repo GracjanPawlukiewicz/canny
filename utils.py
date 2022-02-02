@@ -14,6 +14,11 @@ def show_info_dialog(text):
 def open_save_explorer(target, filter_string):
     path = QFileDialog.getSaveFileName(filter=filter_string)
 
+    print("duuupa")
+    print("duuupa")
+    print("duuupa")
+    print("duuupa")
+    print("duuupa")
     # empty returned path
     if path[0] == '':
         save_path = None
