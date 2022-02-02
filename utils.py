@@ -7,6 +7,7 @@ def show_info_dialog(text):
     info_message.setIcon(QMessageBox.Information)
     info_message.setWindowTitle("Uwaga!")
     info_message.setText(text)
+    print("CWKS")
     info_message.exec_()
 
 
